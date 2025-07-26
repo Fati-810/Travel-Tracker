@@ -212,6 +212,9 @@ app.post("/delete-country", async (req, res) => {
     res.status(500).send("Failed to delete country.");
   }
 });
+app.get("/new", (req, res) => {
+  res.render("new.ejs");
+});
 
 
 app.post("/user", async (req, res) => {
