@@ -26,7 +26,7 @@ Responsive design for various screen sizes.
 
 Displays messages for duplicate, invalid, or empty input.
 
-⚠️ UI Styling:
+🎨  UI Styling:
 
 Custom radio button color selectors.
 
