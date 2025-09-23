@@ -1,5 +1,5 @@
 # Travel-Tracker
-Travel Tracker is a full-stack web application that allows users to mark countries they have visited on an interactive world map. Each user can personalize their experience by selecting a unique name and color, add or delete countries, and reset their entire travel history.
+Travel Tracker is a **full-stack web application** that allows users to mark countries they have visited on an **interactive** world map. Each user can **personalize** their experience by selecting a unique name and color, add or delete countries, and reset their entire travel history.
 
 # Features:
 🧑‍💼 User Management:
