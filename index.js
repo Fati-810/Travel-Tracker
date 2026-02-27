@@ -24,7 +24,7 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });*/
 
-db.connect();
+//db.connect();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
@@ -33,7 +33,7 @@ let currentUserId = 1;
 let users = [];
 
 async function checkVisisted() {
-  const result = await db.query(
+  const result = await pool.query(
     `SELECT vc.country_code, c.country_name
      FROM visited_countries vc
      JOIN countries c ON vc.country_code = c.country_code
@@ -44,7 +44,7 @@ async function checkVisisted() {
 }
 
 async function getCurrentUser() {
-  const result = await db.query("SELECT * FROM users");
+  const result = await pool.query("SELECT * FROM users");
   users = result.rows;
   return users.find((user) => user.id == currentUserId) || null;
 }
@@ -110,7 +110,7 @@ app.post("/add", async (req, res) => {
 
   try {
     // Use exact match with LOWER for accurate detection
-    const result = await db.query(
+    const result = await pool.query(
       "SELECT country_code FROM countries WHERE LOWER(country_name) = $1;",
       [input]
     );
@@ -132,7 +132,7 @@ app.post("/add", async (req, res) => {
     const countryCode = result.rows[0].country_code;
 
     // Check if already visited (case insensitive match already handled by code)
-    const duplicateCheck = await db.query(
+    const duplicateCheck = await pool.query(
       "SELECT * FROM visited_countries WHERE user_id = $1 AND country_code = $2;",
       [currentUserId, countryCode]
     );
@@ -149,7 +149,7 @@ if (duplicateCheck.rows.length > 0) {
   });
 }
 
-    await db.query(
+    await pool.query(
       "INSERT INTO visited_countries (country_code, user_id) VALUES ($1, $2)",
       [countryCode, currentUserId]
     );
@@ -173,13 +173,13 @@ app.post("/delete-user", async (req, res) => {
 
   try {
     // Delete visited countries first (to maintain foreign key constraints)
-    await db.query("DELETE FROM visited_countries WHERE user_id = $1;", [userIdToDelete]);
+    await pool.query("DELETE FROM visited_countries WHERE user_id = $1;", [userIdToDelete]);
 
     // Delete the user
-    await db.query("DELETE FROM users WHERE id = $1;", [userIdToDelete]);
+    await pool.query("DELETE FROM users WHERE id = $1;", [userIdToDelete]);
 
     // If current user was deleted, reset to first available
-    const remainingUsers = await db.query("SELECT id FROM users ORDER BY id ASC LIMIT 1;");
+    const remainingUsers = await pool.query("SELECT id FROM users ORDER BY id ASC LIMIT 1;");
     currentUserId = remainingUsers.rows[0]?.id || null;
 
     res.redirect("/");
@@ -191,7 +191,7 @@ app.post("/delete-user", async (req, res) => {
 // DELETE all visited countries for the current user
 app.post("/reset-countries", async (req, res) => {
   try {
-    await db.query("DELETE FROM visited_countries WHERE user_id = $1", [currentUserId]);
+    await pool.query("DELETE FROM visited_countries WHERE user_id = $1", [currentUserId]);
     res.redirect("/");
   } catch (err) {
     console.error("Reset countries error:", err);
@@ -203,7 +203,7 @@ app.post("/reset-countries", async (req, res) => {
 app.post("/delete-country", async (req, res) => {
   const countryCode = req.body.countryCode;
   try {
-    await db.query("DELETE FROM visited_countries WHERE user_id = $1 AND country_code = $2", [currentUserId, countryCode]);
+    await pool.query("DELETE FROM visited_countries WHERE user_id = $1 AND country_code = $2", [currentUserId, countryCode]);
     res.redirect("/");
   } catch (err) {
     console.error("Delete country error:", err);
@@ -213,7 +213,7 @@ app.post("/delete-country", async (req, res) => {
 app.post("/delete-country", async (req, res) => {
   const countryCode = req.body.countryCode;
   try {
-    await db.query("DELETE FROM visited_countries WHERE user_id = $1 AND country_code = $2", [currentUserId, countryCode]);
+    await pool.query("DELETE FROM visited_countries WHERE user_id = $1 AND country_code = $2", [currentUserId, countryCode]);
     res.redirect("/");
   } catch (err) {
     console.error("Delete country error:", err);
@@ -238,7 +238,7 @@ app.post("/new", async (req, res) => {
   const name = req.body.name;
   const color = req.body.color;
 
-  const result = await db.query(
+  const result = await pool.query(
     "INSERT INTO users (name, color) VALUES($1, $2) RETURNING *;",
     [name, color]
   );
@@ -256,7 +256,7 @@ app.get("/suggestions", async (req, res) => {
   }
 
   try {
-    const result = await db.query(
+    const result = await pool.query(
       "SELECT country_name FROM countries WHERE LOWER(country_name) LIKE $1 LIMIT 10;",
       [`%${query}%`]
     );
