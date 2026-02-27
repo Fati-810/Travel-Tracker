@@ -8,7 +8,6 @@ dotenv.config();
 const { Pool } = pg;
 const app = express();
 const port = 3000;
-const { Pool } = require("pg");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
