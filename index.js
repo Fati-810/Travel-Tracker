@@ -128,7 +128,7 @@ app.post("/add", async (req, res) => {
   `,
   [input]
 );
-    );
+  
 
     if (result.rows.length === 0) {
       const visited = await checkVisisted();
