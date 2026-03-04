@@ -7,6 +7,7 @@ dotenv.config();
 
 const { Pool } = pg;
 const app = express();
+app.set("etag", false);
 
 // ✅ IMPORTANT: Disable ETag so browser/CDN won't return 304 for dynamic routes
 app.set("etag", false);
