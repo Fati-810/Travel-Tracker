@@ -118,9 +118,16 @@ app.post("/add", async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      "SELECT country_code FROM countries WHERE LOWER(country_name) = $1;",
-      [input]
+   const result = await pool.query(
+  `
+  SELECT country_code
+  FROM countries
+  WHERE LOWER(country_name) = $1
+     OR LOWER(country_code) = $1
+  LIMIT 1;
+  `,
+  [input]
+);
     );
 
     if (result.rows.length === 0) {
