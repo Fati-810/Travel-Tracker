@@ -457,15 +457,20 @@
     box.innerHTML = "";
     if (suggestions.length > 0) {
       box.style.display = "block";
-      suggestions.forEach(s => {
-        const li = document.createElement("li");
-        li.textContent = s;
-        li.style.padding = "10px";
-        li.style.cursor = "pointer";
-        li.addEventListener("click", () => {
-          input.value = s;
-          box.style.display = "none";
-        });
+suggestions.forEach(s => {
+  const li = document.createElement("li");
+
+  // show country name + code
+  li.textContent = `${s.name} (${s.code})`;
+
+  li.style.padding = "10px";
+  li.style.cursor = "pointer";
+
+  li.addEventListener("click", () => {
+    // only put country name in input
+    input.value = s.name;
+    box.style.display = "none";
+  });
         box.appendChild(li);
       });
     } else {
