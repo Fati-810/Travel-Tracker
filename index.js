@@ -1,29 +1,23 @@
 import express from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
+import dotenv from "dotenv";
 
-import dotenv from 'dotenv';
 dotenv.config();
 
 const { Pool } = pg;
 const app = express();
-const port = 3000;
+
+// ✅ IMPORTANT: Disable ETag so browser/CDN won't return 304 for dynamic routes
+app.set("etag", false);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production"
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
 });
-/*const db = new pg.Client({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-});*/
-
-//db.connect();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
@@ -31,6 +25,7 @@ app.use(express.static("public"));
 let currentUserId = 1;
 let users = [];
 
+// ✅ helper to reuse visited countries list
 async function checkVisisted() {
   const result = await pool.query(
     `SELECT vc.country_code, c.country_name
@@ -39,7 +34,7 @@ async function checkVisisted() {
      WHERE vc.user_id = $1;`,
     [currentUserId]
   );
-  return result.rows; // return both country_code and country_name
+  return result.rows;
 }
 
 async function getCurrentUser() {
@@ -59,28 +54,41 @@ app.get("/", async (req, res) => {
       color: "gray",
       error: "No user found. Please add a user first.",
       currentUserId: null,
-      highlightCodes: []
+      highlightCodes: [],
     });
   }
 
-  const visited = await checkVisisted(); // contains objects with country_code and country_name
+  const visited = await checkVisisted();
 
-  const validColors = ["red", "orange", "yellow", "olive", "green", "teal", "blue", "violet", "purple", "pink"];
-  const safeColor = validColors.includes(currentUser.color) ? currentUser.color : "gray";
-res.render("index.ejs", {
-  countries: visited,
-  total: visited.length,
-  users,
-  color: safeColor,
-  error: null,
-  currentUserId: currentUser.id,
-  highlightCodes: visited.map(c => c.country_code)
-});
+  const validColors = [
+    "red",
+    "orange",
+    "yellow",
+    "olive",
+    "green",
+    "teal",
+    "blue",
+    "violet",
+    "purple",
+    "pink",
+  ];
+  const safeColor = validColors.includes(currentUser.color)
+    ? currentUser.color
+    : "gray";
 
+  res.render("index.ejs", {
+    countries: visited,
+    total: visited.length,
+    users,
+    color: safeColor,
+    error: null,
+    currentUserId: currentUser.id,
+    highlightCodes: visited.map((c) => c.country_code),
+  });
 });
 
 app.post("/add", async (req, res) => {
-  const input = req.body["country"]?.trim().toLowerCase(); // Ensure input is trimmed and safe
+  const input = req.body["country"]?.trim().toLowerCase();
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
@@ -91,62 +99,61 @@ app.post("/add", async (req, res) => {
       color: "gray",
       error: "No user found. Please add a user first.",
       currentUserId: null,
-      highlightCodes: []
+      highlightCodes: [],
     });
   }
 
   if (!input) {
+    const visited = await checkVisisted();
     return res.render("index.ejs", {
-      countries: await checkVisisted(),
-      total: (await checkVisisted()).length,
+      countries: visited,
+      total: visited.length,
       users,
       color: currentUser.color,
       error: "Please enter a country name.",
       currentUserId: currentUser.id,
-      highlightCodes: (await checkVisisted()).map(c => c.country_code)
+      highlightCodes: visited.map((c) => c.country_code),
     });
   }
 
   try {
-    // Use exact match with LOWER for accurate detection
     const result = await pool.query(
       "SELECT country_code FROM countries WHERE LOWER(country_name) = $1;",
       [input]
     );
 
-  if (result.rows.length === 0) {
-  const visited = await checkVisisted();
-  return res.render("index.ejs", {
-    countries: visited,
-    total: visited.length,
-    users,
-    color: currentUser.color,
-    error: "Country not found. Please enter a valid country name.",
-    currentUserId: currentUser.id,
-    highlightCodes: visited.map(c => c.country_code)
-  });
-}
-
+    if (result.rows.length === 0) {
+      const visited = await checkVisisted();
+      return res.render("index.ejs", {
+        countries: visited,
+        total: visited.length,
+        users,
+        color: currentUser.color,
+        error: "Country not found. Please enter a valid country name.",
+        currentUserId: currentUser.id,
+        highlightCodes: visited.map((c) => c.country_code),
+      });
+    }
 
     const countryCode = result.rows[0].country_code;
 
-    // Check if already visited (case insensitive match already handled by code)
     const duplicateCheck = await pool.query(
       "SELECT * FROM visited_countries WHERE user_id = $1 AND country_code = $2;",
       [currentUserId, countryCode]
     );
-if (duplicateCheck.rows.length > 0) {
-  const visited = await checkVisisted();
-  return res.render("index.ejs", {
-    countries: visited,
-    total: visited.length,
-    users,
-    color: currentUser.color,
-    error: "You've already added this country.",
-    currentUserId: currentUser.id,
-    highlightCodes: visited.map(c => c.country_code)
-  });
-}
+
+    if (duplicateCheck.rows.length > 0) {
+      const visited = await checkVisisted();
+      return res.render("index.ejs", {
+        countries: visited,
+        total: visited.length,
+        users,
+        color: currentUser.color,
+        error: "You've already added this country.",
+        currentUserId: currentUser.id,
+        highlightCodes: visited.map((c) => c.country_code),
+      });
+    }
 
     await pool.query(
       "INSERT INTO visited_countries (country_code, user_id) VALUES ($1, $2)",
@@ -156,13 +163,15 @@ if (duplicateCheck.rows.length > 0) {
     res.redirect("/");
   } catch (err) {
     console.error(err);
+    const visited = await checkVisisted();
     res.render("index.ejs", {
-      countries: await checkVisisted(),
-      total: (await checkVisisted()).length,
+      countries: visited,
+      total: visited.length,
       users,
       color: currentUser.color,
       error: "Something went wrong. Please try again.",
       currentUserId: currentUser.id,
+      highlightCodes: visited.map((c) => c.country_code),
     });
   }
 });
@@ -171,14 +180,14 @@ app.post("/delete-user", async (req, res) => {
   const userIdToDelete = req.body.delete;
 
   try {
-    // Delete visited countries first (to maintain foreign key constraints)
-    await pool.query("DELETE FROM visited_countries WHERE user_id = $1;", [userIdToDelete]);
-
-    // Delete the user
+    await pool.query("DELETE FROM visited_countries WHERE user_id = $1;", [
+      userIdToDelete,
+    ]);
     await pool.query("DELETE FROM users WHERE id = $1;", [userIdToDelete]);
 
-    // If current user was deleted, reset to first available
-    const remainingUsers = await pool.query("SELECT id FROM users ORDER BY id ASC LIMIT 1;");
+    const remainingUsers = await pool.query(
+      "SELECT id FROM users ORDER BY id ASC LIMIT 1;"
+    );
     currentUserId = remainingUsers.rows[0]?.id || null;
 
     res.redirect("/");
@@ -187,10 +196,12 @@ app.post("/delete-user", async (req, res) => {
     res.status(500).send("Failed to delete user.");
   }
 });
-// DELETE all visited countries for the current user
+
 app.post("/reset-countries", async (req, res) => {
   try {
-    await pool.query("DELETE FROM visited_countries WHERE user_id = $1", [currentUserId]);
+    await pool.query("DELETE FROM visited_countries WHERE user_id = $1", [
+      currentUserId,
+    ]);
     res.redirect("/");
   } catch (err) {
     console.error("Reset countries error:", err);
@@ -198,31 +209,24 @@ app.post("/reset-countries", async (req, res) => {
   }
 });
 
-// DELETE a specific country for the current user
+// ✅ KEEP ONLY ONE delete-country route (you had it twice)
 app.post("/delete-country", async (req, res) => {
   const countryCode = req.body.countryCode;
   try {
-    await pool.query("DELETE FROM visited_countries WHERE user_id = $1 AND country_code = $2", [currentUserId, countryCode]);
+    await pool.query(
+      "DELETE FROM visited_countries WHERE user_id = $1 AND country_code = $2",
+      [currentUserId, countryCode]
+    );
     res.redirect("/");
   } catch (err) {
     console.error("Delete country error:", err);
     res.status(500).send("Failed to delete country.");
   }
 });
-app.post("/delete-country", async (req, res) => {
-  const countryCode = req.body.countryCode;
-  try {
-    await pool.query("DELETE FROM visited_countries WHERE user_id = $1 AND country_code = $2", [currentUserId, countryCode]);
-    res.redirect("/");
-  } catch (err) {
-    console.error("Delete country error:", err);
-    res.status(500).send("Failed to delete country.");
-  }
-});
+
 app.get("/new", (req, res) => {
   res.render("new.ejs");
 });
-
 
 app.post("/user", async (req, res) => {
   if (req.body.add === "new") {
@@ -242,40 +246,45 @@ app.post("/new", async (req, res) => {
     [name, color]
   );
 
-  const id = result.rows[0].id;
-  currentUserId = id;
-
+  currentUserId = result.rows[0].id;
   res.redirect("/");
 });
-app.get("/suggestions", async (req, res) => {
-  const query = req.query.q?.toLowerCase();
 
-  if (!query) {
-    return res.json([]);
-  }
+// ✅ FIXED: Suggestions route now returns name + code
+// ✅ FIXED: No-cache headers to prevent 304 Not Modified issues
+app.get("/suggestions", async (req, res) => {
+  // prevent caching on CDN/browser
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  res.set("Surrogate-Control", "no-store");
+
+  const query = req.query.q?.toLowerCase().trim();
+
+  if (!query) return res.json([]);
 
   try {
     const result = await pool.query(
-      "SELECT country_name FROM countries WHERE LOWER(country_name) LIKE $1 LIMIT 10;",
+      `SELECT country_name, country_code
+       FROM countries
+       WHERE LOWER(country_name) LIKE $1
+       ORDER BY country_name
+       LIMIT 10;`,
       [`%${query}%`]
     );
-    res.json(result.rows.map(row => row.country_name));
+
+    // return objects (frontend can show name + store code)
+    res.json(
+      result.rows.map((row) => ({
+        name: row.country_name,
+        code: row.country_code,
+      }))
+    );
   } catch (err) {
     console.error("Suggestion error:", err);
     res.status(500).json([]);
   }
 });
 
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => console.log(`Running on ${PORT}`));
-
-/*app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});*/
-
-    
-    
-    
-    
-    
