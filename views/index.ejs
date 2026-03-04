@@ -449,7 +449,9 @@
       return;
     }
 
-    const res = await fetch(`/suggestions?q=${encodeURIComponent(query)}`);
+  const res = await fetch(`/suggestions?q=${encodeURIComponent(query)}&t=${Date.now()}`, {
+  cache: "no-store"
+});
     const suggestions = await res.json();
 
     box.innerHTML = "";
