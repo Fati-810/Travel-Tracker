@@ -3,10 +3,12 @@ import bodyParser from "body-parser";
 import pg from "pg";
 import dotenv from 'dotenv';
 dotenv.config();
-
+const { Pool } = pg;
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+
+
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -255,11 +257,11 @@ app.get("/suggestions", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
 
-    
+
+ app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});   
     
     
     
