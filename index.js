@@ -239,7 +239,7 @@ app.post("/new", async (req, res) => {
   res.redirect("/");
 });
 app.get("/suggestions", async (req, res) => {
-  const query = req.pool.q?.toLowerCase();
+  const query = req.query.q?.toLowerCase();
 
   if (!query) {
     return res.json([]);
