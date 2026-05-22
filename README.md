@@ -1,7 +1,7 @@
 # Travel-Tracker
 Travel Tracker is a **full-stack web application** that allows users to mark countries they have visited on an **interactive** world map. Each user can **personalize** their experience by selecting a unique name and color, add or delete countries, and reset their entire travel history.
 
-# Features:
+## Features:
 🧑‍💼 User Management:
 
 Add new users with name and a color tag.
@@ -32,7 +32,7 @@ Custom radio button color selectors.
 
 Clean, responsive, and modern layout using Roboto font and Flexbox.
 
-# Technical Overview: (Behind the Scenes)
+## Technical Overview: (Behind the Scenes)
 🔧 Frontend:
 HTML5,CSS3 and EJS
 
@@ -42,5 +42,15 @@ Framework: Node.js with Express
 
 Database: PostgreSQL
 
-# Link: 
+# Preview: 
 https://travel-tracker-znja.onrender.com
+
+## Contact:
+If you'd like to see more of my work, connect with me through my portfolio:
+
+Developer: Fatimah Ali
+Website: https://fatimahdigitaledge.com
+GitHub: https://github.com/Fati-810
+
+## License:
+This project is for educational and portfolio purposes.
