@@ -48,7 +48,7 @@ https://travel-tracker-znja.onrender.com
 ## Contact:
 If you'd like to see more of my work, connect with me through my portfolio:
 
-**Developer:** Fatimah Ali  
+**Developer:** *Fatimah Ali* 
 **Website:** https://fatimahdigitaledge.com  
 **GitHub:** https://github.com/Fati-810
 
