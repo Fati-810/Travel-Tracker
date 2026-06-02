@@ -33,10 +33,10 @@ Custom radio button color selectors.
 Clean, responsive, and modern layout using Roboto font and Flexbox.
 
 ## Technical Overview: (Behind the Scenes)
-🔧 **Frontend:**
+**Frontend:**
 HTML5,CSS3 and EJS
 
-🧠 **Backend:**
+**Backend:**
 
 Framework: Node.js with Express
 
